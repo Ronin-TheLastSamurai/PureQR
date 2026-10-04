@@ -1,5 +1,3 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-
 package com.open.pureqr
 
 import android.Manifest
@@ -22,10 +20,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.OptIn
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -82,9 +78,6 @@ import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -1069,7 +1062,6 @@ fun HistorySheetContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeneratorSheetContent(onDismiss: () -> Unit) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -1101,42 +1093,40 @@ fun GeneratorSheetContent(onDismiss: () -> Unit) {
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0; generatedBitmap = null },
-                label = { Text("Link / Text") },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(0xFF7C4DFF),
-                    selectedLabelColor = Color.White,
-                    containerColor = Color.White.copy(alpha = 0.08f),
-                    labelColor = Color.LightGray
-                )
-            )
-            FilterChip(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1; generatedBitmap = null },
-                label = { Text("UPI") },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(0xFF7C4DFF),
-                    selectedLabelColor = Color.White,
-                    containerColor = Color.White.copy(alpha = 0.08f),
-                    labelColor = Color.LightGray
-                )
-            )
-            FilterChip(
-                selected = selectedTab == 2,
-                onClick = { selectedTab = 2; generatedBitmap = null },
-                label = { Text("Wi-Fi") },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(0xFF7C4DFF),
-                    selectedLabelColor = Color.White,
-                    containerColor = Color.White.copy(alpha = 0.08f),
-                    labelColor = Color.LightGray
-                )
-            )
+        // Custom Segmented Pill Tab Bar (Zero Experimental Annotations)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White.copy(alpha = 0.08f))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            val tabs = listOf("Link / Text", "UPI", "Wi-Fi")
+            tabs.forEachIndexed { index, label ->
+                val isSelected = selectedTab == index
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isSelected) Color(0xFF7C4DFF) else Color.Transparent)
+                        .clickable {
+                            selectedTab = index
+                            generatedBitmap = null
+                        }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        color = if (isSelected) Color.White else Color.LightGray,
+                        fontSize = 13.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -1383,7 +1373,6 @@ fun PermissionDeniedScreen(onRequestPermission: () -> Unit) {
 
 // --- ANALYSIS & PARSING HELPERS ---
 
-@OptIn(ExperimentalGetImage::class)
 private fun processBarcodeFrame(
     imageProxy: ImageProxy,
     scanner: com.google.mlkit.vision.barcode.BarcodeScanner,
