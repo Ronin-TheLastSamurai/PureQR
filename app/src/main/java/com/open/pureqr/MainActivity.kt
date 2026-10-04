@@ -13,7 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.util.Size
+import android.util.Size as AndroidSize
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -107,6 +107,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -181,7 +182,7 @@ data class HistoryItem(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-// --- LOCAL STORAGE MANAGER (ZERO-BLOAT, NO EXTERNAL DB) ---
+// --- LOCAL STORAGE MANAGER (100% OFFLINE) ---
 
 object HistoryStorage {
     private const val PREFS = "pureqr_history"
@@ -245,7 +246,7 @@ object HistoryStorage {
     }
 }
 
-// --- ACTIVITY & SCANNER SCREEN ---
+// --- ACTIVITY & MAIN SCREEN ---
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -302,7 +303,7 @@ fun ScannerScreen() {
     var scanResult by remember { mutableStateOf<ParsedPayload?>(null) }
     var isScanningActive by remember { mutableStateOf(true) }
 
-    // Bottom Sheets Navigation State
+    // Bottom Sheets State
     var showHistorySheet by remember { mutableStateOf(false) }
     var showGeneratorSheet by remember { mutableStateOf(false) }
 
@@ -391,9 +392,8 @@ fun ScannerScreen() {
                         it.setSurfaceProvider(previewView.surfaceProvider)
                     }
 
-                    // 720p Target Resolution: The optimal sweet spot for ML Kit to decode distant QRs in <15ms
                     val imageAnalysis = ImageAnalysis.Builder()
-                        .setTargetResolution(Size(1280, 720))
+                        .setTargetResolution(AndroidSize(1280, 720))
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
 
@@ -472,7 +472,6 @@ fun ScannerScreen() {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Subtle & Cute In-App Branding Chip
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
@@ -497,7 +496,6 @@ fun ScannerScreen() {
                 )
             }
 
-            // Flashlight Toggle
             IconButton(
                 onClick = {
                     cameraInstance?.let { cam ->
@@ -521,7 +519,7 @@ fun ScannerScreen() {
             }
         }
 
-        // Transient Zoom HUD Pill (Appears only during pinch, fades smoothly)
+        // Transient Zoom HUD Pill
         AnimatedVisibility(
             visible = isPinching,
             enter = fadeIn(animationSpec = tween(150)),
@@ -556,7 +554,6 @@ fun ScannerScreen() {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Gallery Scanner
             IconButton(
                 onClick = {
                     galleryPickerLauncher.launch(
@@ -580,7 +577,6 @@ fun ScannerScreen() {
                     .background(Color.White.copy(alpha = 0.2f))
             )
 
-            // Local History
             IconButton(
                 onClick = { showHistorySheet = true },
                 modifier = Modifier.size(44.dp)
@@ -600,7 +596,6 @@ fun ScannerScreen() {
                     .background(Color.White.copy(alpha = 0.2f))
             )
 
-            // QR Code Creator
             IconButton(
                 onClick = { showGeneratorSheet = true },
                 modifier = Modifier.size(44.dp)
@@ -614,7 +609,7 @@ fun ScannerScreen() {
             }
         }
 
-        // 1. Result ModalBottomSheet (Fluid swipe-to-dismiss + Dark Dimming Scrim)
+        // 1. Result ModalBottomSheet
         scanResult?.let { result ->
             ModalBottomSheet(
                 onDismissRequest = {
@@ -695,7 +690,7 @@ private fun triggerSmoothZoom(
         val stepDelay = durationMs / steps
         for (i in 1..steps) {
             val fraction = i / steps.toFloat()
-            val ease = fraction * (2f - fraction) // Smooth ease-out quad curve
+            val ease = fraction * (2f - fraction)
             val interpolated = currentZoom + (clampedTarget - currentZoom) * ease
             cam.cameraControl.setZoomRatio(interpolated)
             onZoomUpdated(interpolated)
@@ -1075,15 +1070,13 @@ fun HistorySheetContent(
 
 @Composable
 fun GeneratorSheetContent(onDismiss: () -> Unit) {
-    var selectedTab by remember { mutableStateOf(0) } // 0: Text/URL, 1: UPI, 2: Wi-Fi
+    var selectedTab by remember { mutableStateOf(0) }
     var rawInput by remember { mutableStateOf("") }
 
-    // UPI Fields
     var upiId by remember { mutableStateOf("") }
     var upiName by remember { mutableStateOf("") }
     var upiAmount by remember { mutableStateOf("") }
 
-    // Wi-Fi Fields
     var wifiSsid by remember { mutableStateOf("") }
     var wifiPassword by remember { mutableStateOf("") }
 
@@ -1108,7 +1101,6 @@ fun GeneratorSheetContent(onDismiss: () -> Unit) {
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Tabs
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = selectedTab == 0,
@@ -1250,7 +1242,7 @@ fun GeneratorSheetContent(onDismiss: () -> Unit) {
     }
 }
 
-// --- QR CODE GENERATION ENGINE (STANDALONE MATRIX) ---
+// --- QR CODE GENERATION ENGINE ---
 
 private fun generateQrBitmap(content: String, sizePx: Int = 512): Bitmap? {
     return try {
@@ -1280,16 +1272,14 @@ fun ViewfinderOverlay() {
         with(drawContext.canvas.nativeCanvas) {
             val check = saveLayer(null, null)
 
-            // Dim Background Vignette
             drawRect(
                 color = Color.Black.copy(alpha = 0.55f),
                 size = size
             )
 
-            // Transparent Center Cutout
             drawRoundRect(
                 topLeft = Offset(left, top),
-                size = androidx.compose.ui.geometry.Size(boxSize, boxSize),
+                size = Size(boxSize, boxSize),
                 cornerRadius = CornerRadius(24.dp.toPx(), 24.dp.toPx()),
                 color = Color.Transparent,
                 blendMode = BlendMode.Clear
@@ -1298,12 +1288,11 @@ fun ViewfinderOverlay() {
             restoreToCount(check)
         }
 
-        // Corner Reticle Brackets (Electric Violet)
         val cornerLength = 32.dp.toPx()
         val cornerRadius = 24.dp.toPx()
         val strokeWidth = 4.dp.toPx()
 
-        // Top-Left Corner
+        // Top-Left
         drawLine(strokeColor, Offset(left + cornerRadius, top), Offset(left + cornerRadius + cornerLength, top), strokeWidth)
         drawLine(strokeColor, Offset(left, top + cornerRadius), Offset(left, top + cornerRadius + cornerLength), strokeWidth)
         drawArc(
@@ -1312,11 +1301,11 @@ fun ViewfinderOverlay() {
             sweepAngle = 90f,
             useCenter = false,
             topLeft = Offset(left, top),
-            size = androidx.compose.ui.geometry.Size(cornerRadius * 2, cornerRadius * 2),
+            size = Size(cornerRadius * 2, cornerRadius * 2),
             style = Stroke(width = strokeWidth)
         )
 
-        // Top-Right Corner
+        // Top-Right
         val right = left + boxSize
         drawLine(strokeColor, Offset(right - cornerRadius - cornerLength, top), Offset(right - cornerRadius, top), strokeWidth)
         drawLine(strokeColor, Offset(right, top + cornerRadius), Offset(right, top + cornerRadius + cornerLength), strokeWidth)
@@ -1326,11 +1315,11 @@ fun ViewfinderOverlay() {
             sweepAngle = 90f,
             useCenter = false,
             topLeft = Offset(right - cornerRadius * 2, top),
-            size = androidx.compose.ui.geometry.Size(cornerRadius * 2, cornerRadius * 2),
+            size = Size(cornerRadius * 2, cornerRadius * 2),
             style = Stroke(width = strokeWidth)
         )
 
-        // Bottom-Left Corner
+        // Bottom-Left
         val bottom = top + boxSize
         drawLine(strokeColor, Offset(left + cornerRadius, bottom), Offset(left + cornerRadius + cornerLength, bottom), strokeWidth)
         drawLine(strokeColor, Offset(left, bottom - cornerRadius - cornerLength), Offset(left, bottom - cornerRadius), strokeWidth)
@@ -1340,11 +1329,11 @@ fun ViewfinderOverlay() {
             sweepAngle = 90f,
             useCenter = false,
             topLeft = Offset(left, bottom - cornerRadius * 2),
-            size = androidx.compose.ui.geometry.Size(cornerRadius * 2, cornerRadius * 2),
+            size = Size(cornerRadius * 2, cornerRadius * 2),
             style = Stroke(width = strokeWidth)
         )
 
-        // Bottom-Right Corner
+        // Bottom-Right
         drawLine(strokeColor, Offset(right - cornerRadius - cornerLength, bottom), Offset(right - cornerRadius, bottom), strokeWidth)
         drawLine(strokeColor, Offset(right, bottom - cornerRadius - cornerLength), Offset(right, bottom - cornerRadius), strokeWidth)
         drawArc(
@@ -1353,7 +1342,7 @@ fun ViewfinderOverlay() {
             sweepAngle = 90f,
             useCenter = false,
             topLeft = Offset(right - cornerRadius * 2, bottom - cornerRadius * 2),
-            size = androidx.compose.ui.geometry.Size(cornerRadius * 2, cornerRadius * 2),
+            size = Size(cornerRadius * 2, cornerRadius * 2),
             style = Stroke(width = strokeWidth)
         )
     }
@@ -1419,9 +1408,6 @@ private fun processBarcodeFrame(
                     val barcodeArea = boundingBox.width() * boundingBox.height()
                     val ratio = barcodeArea.toFloat() / frameArea.toFloat()
 
-                    // Distant Auto-Zoom Heuristic:
-                    // If QR code occupies less than 12% of the frame and current zoom is below 1.8x,
-                    // smoothly interpolate zoom to 2.2x over 250ms with a 1.5s lock cooldown
                     val now = System.currentTimeMillis()
                     if (ratio < 0.12f && currentZoom < 1.8f && (now - lastAutoZoomTime > 1500L)) {
                         onTriggerSmoothZoom(2.2f)
