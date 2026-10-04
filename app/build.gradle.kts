@@ -80,6 +80,9 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
-    // ML Kit Barcode Scanning (Lightweight Play Services runtime - minimal APK size)
+    // ML Kit Barcode Scanning
     implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+
+    // Minimalist Offline QR Matrix Engine (Zero Bloat)
+    implementation("com.google.zxing:core:3.5.3")
 }
