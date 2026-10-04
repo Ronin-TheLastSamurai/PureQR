@@ -83,6 +83,6 @@ dependencies {
     // ML Kit Barcode Scanning
     implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
 
-    // Minimalist Offline QR Matrix Engine (Zero Bloat)
+    // Minimalist Offline QR Matrix Engine
     implementation("com.google.zxing:core:3.5.3")
 }
