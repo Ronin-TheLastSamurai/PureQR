@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.open.pureqr
 
 import android.Manifest
@@ -289,7 +291,6 @@ fun PureQRApp() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScannerScreen() {
     val context = LocalContext.current
@@ -1068,6 +1069,7 @@ fun HistorySheetContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeneratorSheetContent(onDismiss: () -> Unit) {
     var selectedTab by remember { mutableStateOf(0) }
